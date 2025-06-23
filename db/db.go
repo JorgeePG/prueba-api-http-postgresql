@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"log"
 
 	_ "github.com/lib/pq"
 )
@@ -20,8 +19,6 @@ func Initialize(connStr string) error {
 	if err = DB.Ping(); err != nil {
 		return err
 	}
-
-	log.Println("Database connection established")
 	return nil
 }
 
