@@ -32,7 +32,7 @@ func main() {
 	r.HandleFunc("/", handler.List).Methods("GET")
 	r.HandleFunc("/add", handler.Add).Methods("POST")
 	r.HandleFunc("/update", handler.Update).Methods("POST")
-	r.HandleFunc("/delete", handler.Delete).Methods("POST")
+	r.HandleFunc("/delete", handler.Delete).Methods("GET")
 
 	// Iniciar el servidor
 	fmt.Println("Servidor iniciado en http://localhost:8080")
