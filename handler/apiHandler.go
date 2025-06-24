@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/JorgeePG/prueba-api-http-postgresql-/db"
-	"github.com/JorgeePG/prueba-api-http-postgresql-/models"
+	"github.com/JorgeePG/prueba-api-http-postgresql-/db/models"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )

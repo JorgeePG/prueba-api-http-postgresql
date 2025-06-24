@@ -1,42 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 
-	"github.com/JorgeePG/prueba-api-http-postgresql-/db"
-	"github.com/JorgeePG/prueba-api-http-postgresql-/handler"
-	"github.com/JorgeePG/prueba-api-http-postgresql-/middleware"
-	"github.com/gorilla/mux"
+	"github.com/JorgeePG/prueba-api-http-postgresql-/cmd/app"
 )
 
 func main() {
-	// Configurar la conexión a la base de datos
-	connStr := "host=localhost port=5432 user=postgres password=postgres dbname=api_db sslmode=disable"
-	err := db.Initialize(connStr)
-	if err != nil {
-		log.Fatalf("Error al inicializar la base de datos: %v", err)
+	application := app.New()
+
+	if err := application.Initialize(); err != nil {
+		log.Fatalf("Error al inicializar la aplicación: %v", err)
 	}
-	defer db.Close()
+	defer application.Shutdown()
 
-	// Ejecutar migraciones para crear o actualizar el esquema
-	if err = db.RunMigrations(); err != nil {
-		log.Fatalf("Error al ejecutar migraciones: %v", err)
-	}
-
-	// Configurar el router
-	r := mux.NewRouter()
-	r.Use(middleware.CspControl)
-
-	r.HandleFunc("/", handler.List).Methods("GET")
-	r.HandleFunc("/add", handler.Add).Methods("POST")
-	r.HandleFunc("/update", handler.Update).Methods("POST")
-	r.HandleFunc("/delete", handler.Delete).Methods("GET")
-
-	// Iniciar el servidor
-	fmt.Println("Servidor iniciado en http://localhost:8080")
-	if err := http.ListenAndServe(":8080", r); err != nil {
-		log.Fatalf("Error al iniciar el servidor: %v", err)
+	if err := application.Run(); err != nil {
+		log.Fatalf("Error al ejecutar la aplicación: %v", err)
 	}
 }
