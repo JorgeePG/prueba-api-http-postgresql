@@ -1,2 +1,2 @@
-Proyecto que tenga una API http y lea de base de datos postgreSQL.
-La base de datos se lanza a través de docker compose.
+- Proyecto que tenga una API http y lea de base de datos postgreSQL.
+- La base de datos se lanza a través de docker compose.
