@@ -24,18 +24,10 @@ func New(port string) *Server {
 func (s *Server) SetupRoutes() {
 	s.router.Use(middleware.CspControl)
 
-	// Rutas originales (mantener compatibilidad)
-	s.router.HandleFunc("/", handler.List).Methods("GET")
-	s.router.HandleFunc("/add", handler.Add).Methods("POST")
-	s.router.HandleFunc("/update", handler.Update).Methods("POST")
-	s.router.HandleFunc("/delete", handler.Delete).Methods("GET")
-
-	// Nuevas rutas con arquitectura mejorada (v2)
-	api := s.router.PathPrefix("/api/v1").Subrouter()
-	api.HandleFunc("/users", handler.ListV2).Methods("GET")
-	api.HandleFunc("/users", handler.AddV2).Methods("POST")
-	api.HandleFunc("/users/update", handler.UpdateV2).Methods("POST") // Mantener formato original por compatibilidad
-	api.HandleFunc("/users/delete", handler.DeleteV2).Methods("GET")  // Mantener formato original por compatibilidad
+	s.router.HandleFunc("/", handler.ListV2).Methods("GET")
+	s.router.HandleFunc("/add", handler.AddV2).Methods("POST")
+	s.router.HandleFunc("/update", handler.UpdateV2).Methods("POST") // Mantener formato original por compatibilidad
+	s.router.HandleFunc("/delete", handler.DeleteV2).Methods("GET")  // Mantener formato original por compatibilidad
 }
 
 func (s *Server) Start() error {

@@ -3,9 +3,10 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/rs/zerolog/log"
 
 	_ "github.com/lib/pq"
 )
@@ -27,6 +28,7 @@ func RunMigrations() error {
 	// Abrir la conexión a la base de datos
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
+		log.Error().Err(err).Msg("Error al abrir la conexión a la base de datos")
 		return fmt.Errorf("error al abrir la conexión a la base de datos: %v", err)
 	}
 	defer db.Close()
@@ -36,7 +38,7 @@ func RunMigrations() error {
 	if err != nil {
 		return fmt.Errorf("error al conectar a la base de datos: %v", err)
 	}
-	log.Println("Conexión a la base de datos establecida correctamente")
+	log.Info().Msg("Conexión a la base de datos establecida correctamente")
 
 	// Ejecutar los scripts de migración
 	// Comprobar varias rutas relativas posibles para encontrar las migraciones
@@ -58,35 +60,39 @@ func RunMigrations() error {
 	}
 
 	if !pathExists {
+		log.Error().Msg("No se pudo encontrar la carpeta de migraciones en las rutas relativas especificadas")
 		return fmt.Errorf("no se pudo encontrar la carpeta de migraciones en ninguna de las rutas relativas")
 	}
 
-	log.Printf("Buscando migraciones en: %s", migrationsPath)
+	log.Info().Msgf("Buscando migraciones en: %s", migrationsPath)
 
 	files, err := os.ReadDir(migrationsPath)
 	if err != nil {
+		log.Fatal().Err(err).Msg("Error al leer la carpeta de migraciones")
 		return fmt.Errorf("error al leer la carpeta de migraciones: %v", err)
 	}
 
 	for _, file := range files {
 		if filepath.Ext(file.Name()) == ".sql" {
-			log.Printf("Ejecutando migración: %s", file.Name())
+			log.Info().Msgf("Ejecutando migración: %s", file.Name())
 
 			filePath := filepath.Join(migrationsPath, file.Name())
 			sqlScript, err := os.ReadFile(filePath)
 			if err != nil {
+				log.Fatal().Err(err).Msgf("Error al leer el archivo de migración %s", file.Name())
 				return fmt.Errorf("error al leer el archivo de migración %s: %v", file.Name(), err)
 			}
 
 			_, err = db.Exec(string(sqlScript))
 			if err != nil {
+				log.Fatal().Err(err).Msgf("Error al ejecutar la migración %s", file.Name())
 				return fmt.Errorf("error al ejecutar la migración %s: %v", file.Name(), err)
 			}
 
-			log.Printf("Migración ejecutada correctamente: %s", file.Name())
+			log.Info().Msgf("Migración ejecutada correctamente: %s", file.Name())
 		}
 	}
 
-	log.Println("Todas las migraciones se ejecutaron correctamente")
+	log.Info().Msg("Todas las migraciones se ejecutaron correctamente")
 	return nil
 }
