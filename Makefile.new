@@ -1,0 +1,99 @@
+# Variables
+APP_NAME=api-http-postgresql
+APP_BIN=./bin/$(APP_NAME)
+MAIN_PATH=./cmd/main.go
+
+# Construir la aplicación
+build:
+	@echo "Construyendo la aplicación..."
+	@mkdir -p bin
+	@go build -o $(APP_BIN) $(MAIN_PATH)
+
+# Limpiar archivos de compilación
+clean:
+	@echo "Limpiando archivos de compilación..."
+	@rm -rf bin/
+
+# Formatear código
+fmt:
+	@echo "Formateando código..."
+	@go fmt ./...
+
+# Verificar código
+vet:
+	@echo "Verificando código..."
+	@go vet ./...
+
+# Ejecutar tests
+test:
+	@echo "Ejecutando tests..."
+	@go test ./... -v
+
+# Ejecutar tests con cobertura
+test-coverage:
+	@echo "Ejecutando tests con cobertura..."
+	@go test ./... -coverprofile=coverage.out
+	@go tool cover -html=coverage.out -o coverage.html
+
+# Actualizar dependencias
+deps:
+	@echo "Actualizando dependencias..."
+	@go mod tidy
+	@go mod download
+
+# Desarrollo con Docker
+dev:
+	@echo "Iniciando servicios con Docker Compose..."
+	@docker-compose up -d
+	@echo "Servicios iniciados correctamente."
+	@sleep 2
+	@echo "Ejecutando la aplicación en modo desarrollo..."
+	@bash -c "trap 'echo \"Deteniendo servicios...\"; docker-compose down' EXIT; go run $(MAIN_PATH)"
+
+# Ejecutar la aplicación
+run: build
+	@echo "Iniciando servicios con Docker Compose..."
+	@docker-compose up -d
+	@echo "Servicios iniciados correctamente."
+	@sleep 2
+	@echo "Ejecutando la aplicación..."
+	@bash -c "trap 'echo \"Deteniendo servicios...\"; docker-compose down' EXIT; $(APP_BIN)"
+
+# Generar modelos SQLBoiler
+generate:
+	@echo "Generando modelos SQLBoiler..."
+	@sqlboiler psql
+
+# Ejecutar migraciones
+migrate:
+	@echo "Ejecutando migraciones..."
+	@go run $(MAIN_PATH) migrate
+
+# Ver logs de Docker
+logs:
+	@docker-compose logs -f
+
+# Detener servicios Docker
+stop:
+	@echo "Deteniendo servicios Docker..."
+	@docker-compose down
+
+# Ayuda
+help:
+	@echo "Comandos disponibles:"
+	@echo "  build          - Construir la aplicación"
+	@echo "  clean          - Limpiar archivos de compilación"
+	@echo "  fmt            - Formatear código"
+	@echo "  vet            - Verificar código"
+	@echo "  test           - Ejecutar tests"
+	@echo "  test-coverage  - Ejecutar tests con cobertura"
+	@echo "  deps           - Actualizar dependencias"
+	@echo "  dev            - Ejecutar en modo desarrollo"
+	@echo "  run            - Ejecutar la aplicación"
+	@echo "  generate       - Generar modelos SQLBoiler"
+	@echo "  migrate        - Ejecutar migraciones"
+	@echo "  logs           - Ver logs de Docker"
+	@echo "  stop           - Detener servicios Docker"
+	@echo "  help           - Mostrar esta ayuda"
+
+.PHONY: build clean fmt vet test test-coverage deps dev run generate migrate logs stop help

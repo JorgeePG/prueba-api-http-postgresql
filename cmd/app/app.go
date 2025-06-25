@@ -4,7 +4,7 @@ package app
 import (
 	"github.com/JorgeePG/prueba-api-http-postgresql-/cmd/config"
 	"github.com/JorgeePG/prueba-api-http-postgresql-/cmd/server"
-	"github.com/JorgeePG/prueba-api-http-postgresql-/db"
+	"github.com/JorgeePG/prueba-api-http-postgresql-/infraestructure/db"
 )
 
 type App struct {
