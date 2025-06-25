@@ -21,9 +21,13 @@ const (
 
 // RunMigrations ejecuta los scripts SQL para crear o actualizar la estructura de la base de datos
 func RunMigrations() error {
+	log.Info().Msg("Iniciando proceso de migraciones") // NUEVO
+
 	// Construir la cadena de conexión
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		dbHost, dbPort, dbUser, dbPassword, dbName)
+
+	log.Debug().Str("connStr", connStr).Msg("Cadena de conexión construida") // NUEVO
 
 	// Abrir la conexión a la base de datos
 	db, err := sql.Open("postgres", connStr)
@@ -36,6 +40,7 @@ func RunMigrations() error {
 	// Probar la conexión
 	err = db.Ping()
 	if err != nil {
+		log.Error().Err(err).Msg("Error al conectar a la base de datos")
 		return fmt.Errorf("error al conectar a la base de datos: %v", err)
 	}
 	log.Info().Msg("Conexión a la base de datos establecida correctamente")
@@ -68,12 +73,16 @@ func RunMigrations() error {
 
 	files, err := os.ReadDir(migrationsPath)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error al leer la carpeta de migraciones")
+		log.Error().Err(err).Msg("Error al leer la carpeta de migraciones")
 		return fmt.Errorf("error al leer la carpeta de migraciones: %v", err)
 	}
 
+	log.Info().Int("count", len(files)).Msg("Archivos encontrados en carpeta de migraciones") // NUEVO
+
+	migrationCount := 0 // NUEVO: contador
 	for _, file := range files {
 		if filepath.Ext(file.Name()) == ".sql" {
+			migrationCount++ // NUEVO
 			log.Info().Msgf("Ejecutando migración: %s", file.Name())
 
 			filePath := filepath.Join(migrationsPath, file.Name())
@@ -90,9 +99,13 @@ func RunMigrations() error {
 			}
 
 			log.Info().Msgf("Migración ejecutada correctamente: %s", file.Name())
+		} else {
+			log.Debug().Str("file", file.Name()).Msg("Archivo ignorado (no es .sql)") // NUEVO
 		}
 	}
 
-	log.Info().Msg("Todas las migraciones se ejecutaron correctamente")
+	log.Info().
+		Int("total_migrations", migrationCount).
+		Msg("Todas las migraciones se ejecutaron correctamente") // MEJORADO
 	return nil
 }
