@@ -210,3 +210,26 @@ func AddTopicSubscriber(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(response)
 }
+
+func DeleteTopicSubscriber(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	topic := r.URL.Query().Get("topic")
+	if topic == "" {
+		response := models.Response{
+			Status:  "error",
+			Message: "Topic is required",
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	go subscriber.DeleteTopicSubscriber(topic)
+
+	response := models.Response{
+		Status:  "success",
+		Message: "Subscriber removed successfully for topic: " + topic,
+	}
+	json.NewEncoder(w).Encode(response)
+}

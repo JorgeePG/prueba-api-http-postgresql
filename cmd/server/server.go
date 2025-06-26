@@ -30,7 +30,7 @@ func (s *Server) SetupRoutes() {
 	s.router.HandleFunc("/delete", handler.DeleteV2).Methods("GET")
 	// MQTT routes
 	s.router.HandleFunc("/mqtt/topic/add", handler.AddTopicSubscriber).Methods("GET")
-	s.router.HandleFunc("/mqtt/topic/delete", handler.AddTopicSubscriber).Methods("GET")
+	s.router.HandleFunc("/mqtt/topic/delete", handler.DeleteTopicSubscriber).Methods("GET")
 }
 
 func (s *Server) Start() error {
