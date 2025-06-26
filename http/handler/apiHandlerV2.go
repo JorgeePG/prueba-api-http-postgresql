@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/JorgeePG/prueba-api-http-postgresql-/mqtt/subscriber"
 	"github.com/JorgeePG/prueba-api-http-postgresql-/pkg/models"
 	"github.com/JorgeePG/prueba-api-http-postgresql-/pkg/repository"
 	"github.com/JorgeePG/prueba-api-http-postgresql-/pkg/service"
@@ -183,6 +184,29 @@ func ListV2(w http.ResponseWriter, r *http.Request) {
 		Status:  "success",
 		Message: "Users retrieved successfully",
 		Data:    apiUsers,
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
+func AddTopicSubscriber(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	topic := r.URL.Query().Get("topic")
+	if topic == "" {
+		response := models.Response{
+			Status:  "error",
+			Message: "Topic is required",
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	go subscriber.AddTopicSubscriber(topic)
+
+	response := models.Response{
+		Status:  "success",
+		Message: "Subscriber added successfully for topic: " + topic,
 	}
 	json.NewEncoder(w).Encode(response)
 }

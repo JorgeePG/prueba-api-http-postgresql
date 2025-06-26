@@ -26,8 +26,11 @@ func (s *Server) SetupRoutes() {
 
 	s.router.HandleFunc("/", handler.ListV2).Methods("GET")
 	s.router.HandleFunc("/add", handler.AddV2).Methods("POST")
-	s.router.HandleFunc("/update", handler.UpdateV2).Methods("POST") // Mantener formato original por compatibilidad
-	s.router.HandleFunc("/delete", handler.DeleteV2).Methods("GET")  // Mantener formato original por compatibilidad
+	s.router.HandleFunc("/update", handler.UpdateV2).Methods("POST")
+	s.router.HandleFunc("/delete", handler.DeleteV2).Methods("GET")
+	// MQTT routes
+	s.router.HandleFunc("/mqtt/topic/add", handler.AddTopicSubscriber).Methods("GET")
+	s.router.HandleFunc("/mqtt/topic/delete", handler.AddTopicSubscriber).Methods("GET")
 }
 
 func (s *Server) Start() error {
