@@ -2,9 +2,14 @@ package subscriber
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"sync"
+
+	"github.com/JorgeePG/prueba-api-http-postgresql-/pkg/repository"
+
+	"github.com/JorgeePG/prueba-api-http-postgresql-/pkg/models"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
@@ -23,6 +28,8 @@ type SubscriberManager struct {
 	subscribers map[string]*SubscriberInfo
 	mu          sync.RWMutex
 	brokerURL   string
+	db          *sql.DB
+	mqttRepo    *repository.MqttMessageRepository
 }
 
 // Instancia global del manager
@@ -38,6 +45,12 @@ func GetSubscriberManager() *SubscriberManager {
 		}
 	})
 	return globalManager
+}
+
+// SetDatabase configura la base de datos para el manager
+func (sm *SubscriberManager) SetDatabase(db *sql.DB) {
+	sm.db = db
+	sm.mqttRepo = repository.NewMqttMessageRepository(db)
 }
 
 func AddTopicSubscriber(topic string) {
@@ -75,10 +88,35 @@ func AddTopicSubscriber(topic string) {
 		manager.AddSubscriber(topic, client, cancel)
 
 		token := client.Subscribe(topic, 1, func(client mqtt.Client, msg mqtt.Message) {
-			log.Info().
-				Str("topic", msg.Topic()).
-				Str("payload", string(msg.Payload())).
-				Msg("📥 Mensaje recibido")
+			// Crear el mensaje para guardar en BD
+			mqttMessage := &models.MqttMessage{
+				Topic:    msg.Topic(),
+				Payload:  string(msg.Payload()),
+				QOS:      int(msg.Qos()),
+				Retained: msg.Retained(),
+			}
+
+			// Guardar en la base de datos
+			if manager.mqttRepo != nil {
+				if err := manager.mqttRepo.Create(mqttMessage); err != nil {
+					log.Error().
+						Err(err).
+						Str("topic", msg.Topic()).
+						Msg("❌ Error guardando mensaje en base de datos")
+				} else {
+					log.Info().
+						Str("topic", msg.Topic()).
+						Int("message_id", mqttMessage.ID).
+						Str("payload", string(msg.Payload())).
+						Msg("💾 Mensaje guardado en base de datos")
+				}
+			} else {
+				log.Warn().Msg("⚠️  Base de datos no configurada, solo registrando mensaje")
+				log.Info().
+					Str("topic", msg.Topic()).
+					Str("payload", string(msg.Payload())).
+					Msg("📥 Mensaje recibido")
+			}
 		})
 
 		if token.Wait() && token.Error() != nil {
@@ -86,10 +124,6 @@ func AddTopicSubscriber(topic string) {
 		}
 
 		log.Info().Str("topic", topic).Msg("✅ Suscrito al topic")
-
-		// ELIMINAR estas líneas que capturan Ctrl+C
-		// c := make(chan os.Signal, 1)
-		// signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 		// Solo esperar la cancelación del contexto
 		<-ctx.Done()
