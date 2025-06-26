@@ -23,13 +23,13 @@ func (a *App) Initialize() error {
 	log.Info().Msg("Initializing application...")
 	// Inicializar base de datos
 	if err := db.Initialize(a.config.Database.ConnectionString()); err != nil {
-		log.Fatal().Err(err).Msg("Error initializing database")
+		log.Error().Err(err).Msg("Error initializing database")
 		return err
 	}
 
 	// Ejecutar migraciones
 	if err := db.RunMigrations(); err != nil {
-		log.Fatal().Err(err).Msg("Error running migrations")
+		log.Error().Err(err).Msg("Error running migrations")
 		return err
 	}
 

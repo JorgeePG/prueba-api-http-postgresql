@@ -9,13 +9,14 @@ import (
 )
 
 func main() {
+
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	application := app.New()
 
 	log.Info().Msg("Iniciando inicialización de la aplicación")
 	if err := application.Initialize(); err != nil {
-		log.Fatal().
+		log.Error().
 			Err(err).
 			Msg("Error al inicializar la aplicación")
 		return
@@ -25,7 +26,7 @@ func main() {
 	defer application.Shutdown()
 
 	if err := application.Run(); err != nil {
-		log.Fatal().
+		log.Error().
 			Err(err).
 			Msg("Error al ejecutar la aplicación")
 	}

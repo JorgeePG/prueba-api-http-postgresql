@@ -1,12 +1,12 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/JorgeePG/prueba-api-http-postgresql-/http/handler"
 	"github.com/JorgeePG/prueba-api-http-postgresql-/http/middleware"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
@@ -31,6 +31,6 @@ func (s *Server) SetupRoutes() {
 }
 
 func (s *Server) Start() error {
-	fmt.Printf("Servidor iniciado en http://localhost:%s\n", s.port)
+	log.Info().Msgf("Iniciando servidor en el puerto %s", s.port)
 	return http.ListenAndServe(":"+s.port, s.router)
 }
