@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/JorgeePG/prueba-api-http-postgresql-/mqtt/subscriber"
 	"github.com/JorgeePG/prueba-api-http-postgresql-/pkg/models"
@@ -202,6 +203,40 @@ func AddTopicSubscriber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validar que el topic no esté vacío después de trim spaces
+	topic = strings.TrimSpace(topic)
+	if topic == "" {
+		response := models.Response{
+			Status:  "error",
+			Message: "Topic cannot be empty or just spaces",
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// Validar formato del topic MQTT
+	if !isValidMQTTTopic(topic) {
+		response := models.Response{
+			Status:  "error",
+			Message: "Invalid MQTT topic format",
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// Validar que el topic MQTT sea válido
+	if !isValidMQTTTopic(topic) {
+		response := models.Response{
+			Status:  "error",
+			Message: "Invalid MQTT topic",
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
 	go subscriber.AddTopicSubscriber(topic)
 
 	response := models.Response{
@@ -284,4 +319,16 @@ func ListMqttMessages(w http.ResponseWriter, r *http.Request) {
 		Data:    messages,
 	}
 	json.NewEncoder(w).Encode(response)
+}
+
+// isValidMQTTTopic valida si un topic MQTT es válido
+func isValidMQTTTopic(topic string) bool {
+	if topic == "" || len(topic) > 65535 {
+		return false
+	}
+	// MQTT topic no debe contener caracteres null
+	if strings.Contains(topic, "\x00") {
+		return false
+	}
+	return true
 }

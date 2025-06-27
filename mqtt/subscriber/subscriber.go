@@ -62,9 +62,17 @@ func AddTopicSubscriber(topic string) {
 		return
 	}
 
+	// Log para debug del topic recibido
+	log.Info().
+		Str("topic", topic).
+		Str("topic_length", fmt.Sprintf("%d", len(topic))).
+		Str("topic_bytes", fmt.Sprintf("%+v", []byte(topic))).
+		Msg("🔍 Topic recibido para suscripción")
+
 	go func(topic string) {
 		if topic == "" {
 			log.Error().Msg("El topic no puede estar vacío")
+			return
 		}
 		// Configurar logger
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
