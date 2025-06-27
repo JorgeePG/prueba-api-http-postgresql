@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type user struct {
@@ -43,31 +45,21 @@ func TestAddUserOk(t *testing.T) {
 
 	// Convertir a JSON
 	jsonData, err := json.Marshal(u1)
-	if err != nil {
-		t.Fatalf("Failed to marshal user to JSON: %v", err)
-	}
+	assert.NoError(t, err, "Should marshal user to JSON without error")
 
 	// Hacer la petición HTTP POST al endpoint
 	resp, err := http.Post(addURL, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request without error")
 	defer resp.Body.Close()
 
 	// Verificar el código de estado
-	if resp.StatusCode != http.StatusCreated {
-		t.Errorf("Expected status code %d, got %d", http.StatusCreated, resp.StatusCode)
-	}
+	assert.Equal(t, http.StatusCreated, resp.StatusCode, "Should return 201 Created")
 
 	// Verificar la respuesta JSON
 	var response Response
 	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
-	if response.Status != "success" {
-		t.Errorf("Expected status 'success', got '%s'", response.Status)
-	}
+	assert.NoError(t, err, "Should decode response without error")
+	assert.Equal(t, "success", response.Status, "Response status should be success")
 
 	t.Logf("Test completed successfully: %s", response.Message)
 }
@@ -85,31 +77,21 @@ func TestAddUserBad(t *testing.T) {
 
 	// Convertir a JSON
 	jsonData, err := json.Marshal(u1)
-	if err != nil {
-		t.Fatalf("Failed to marshal user to JSON: %v", err)
-	}
+	assert.NoError(t, err, "Should marshal user to JSON without error")
 
 	// Hacer la petición HTTP POST al endpoint
 	resp, err := http.Post(addURL, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request without error")
 	defer resp.Body.Close()
+
 	// Verificar el código de estado
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, resp.StatusCode)
-	}
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode, "Should return 400 Bad Request for invalid data")
 
 	// Verificar la respuesta JSON
 	var response Response
 	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
-
-	if response.Status != "error" {
-		t.Errorf("Expected status 'error', got '%s'", response.Status)
-	}
+	assert.NoError(t, err, "Should decode response without error")
+	assert.Equal(t, "error", response.Status, "Response status should be error for bad request")
 
 	t.Logf("Test completed successfully: %s", response.Message)
 }
@@ -136,23 +118,17 @@ func TestDeleteUserOk(t *testing.T) {
 
 	// Convertir a JSON
 	jsonData, err := json.Marshal(u1)
-	if err != nil {
-		t.Fatalf("Failed to marshal user to JSON: %v", err)
-	}
+	assert.NoError(t, err, "Should marshal user to JSON without error")
 
 	// Hacer la petición HTTP POST al endpoint
 	resp, err := http.Post(addURL, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request without error")
 	defer resp.Body.Close()
 
 	// Decodificar la respuesta para obtener el id
 	var addResp Response
 	err = json.NewDecoder(resp.Body).Decode(&addResp)
-	if err != nil {
-		t.Fatalf("Failed to decode add user response: %v", err)
-	}
+	assert.NoError(t, err, "Should decode add user response without error")
 
 	// Extraer el id del usuario creado
 	type userID struct {
@@ -162,60 +138,39 @@ func TestDeleteUserOk(t *testing.T) {
 	// Si Data es un objeto con campo id
 	b, _ := json.Marshal(addResp.Data)
 	json.Unmarshal(b, &uid)
-	if uid.ID == 0 {
-		t.Fatalf("No se pudo obtener el id del usuario creado")
-	}
+	assert.NotZero(t, uid.ID, "Should get valid user ID from creation response")
 
 	// Ahora eliminar el usuario usando el id
-
 	deleteURL := apiURL + "/delete"
 
 	respDel, err := http.Get(deleteURL + fmt.Sprintf("?id=%d", uid.ID))
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request to delete: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request to delete without error")
 	defer respDel.Body.Close()
 
-	if respDel.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, respDel.StatusCode)
-	}
+	assert.Equal(t, http.StatusOK, respDel.StatusCode, "Should return 200 OK for valid delete")
 
 	var responseDel Response
 	err = json.NewDecoder(respDel.Body).Decode(&responseDel)
-	if err != nil {
-		t.Fatalf("Failed to decode delete response: %v", err)
-	}
-	if responseDel.Status != "success" {
-		t.Errorf("Expected status 'success', got '%s'", responseDel.Status)
-	}
+	assert.NoError(t, err, "Should decode delete response without error")
+	assert.Equal(t, "success", responseDel.Status, "Delete response status should be success")
 
 	t.Logf("Delete test completed successfully: %s", responseDel.Message)
 }
 
 func TestDeleteBad(t *testing.T) {
-
-	// Ahora eliminar el usuario usando el id
-
+	// Eliminar un usuario usando un id inválido
 	deleteURL := apiURL + "/delete"
 
 	respDel, err := http.Get(deleteURL + fmt.Sprintf("?id=%d", -1)) // Usando un id inválido
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request to delete: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request to delete without error")
 	defer respDel.Body.Close()
 
-	if respDel.StatusCode != http.StatusNotFound {
-		t.Errorf("Expected status code %d, got %d", http.StatusNotFound, respDel.StatusCode)
-	}
+	assert.Equal(t, http.StatusNotFound, respDel.StatusCode, "Should return 404 Not Found for invalid ID")
 
 	var responseDel Response
 	err = json.NewDecoder(respDel.Body).Decode(&responseDel)
-	if err != nil {
-		t.Fatalf("Failed to decode delete response: %v", err)
-	}
-	if responseDel.Status != "error" {
-		t.Errorf("Expected status 'error', got '%s'", responseDel.Status)
-	}
+	assert.NoError(t, err, "Should decode delete response without error")
+	assert.Equal(t, "error", responseDel.Status, "Delete response status should be error for invalid ID")
 
 	t.Logf("Delete test completed successfully: %s", responseDel.Message)
 }
@@ -236,14 +191,10 @@ func TestListUsers(t *testing.T) {
 	}
 
 	jsonData1, err := json.Marshal(u1)
-	if err != nil {
-		t.Fatalf("Failed to marshal user to JSON: %v", err)
-	}
+	assert.NoError(t, err, "Should marshal user 1 to JSON without error")
 
 	resp1, err := http.Post(addURL, "application/json", bytes.NewBuffer(jsonData1))
-	if err != nil {
-		t.Fatalf("Failed to create test user 1: %v", err)
-	}
+	assert.NoError(t, err, "Should create test user 1 without error")
 	resp1.Body.Close()
 
 	// Crear segundo usuario
@@ -256,45 +207,28 @@ func TestListUsers(t *testing.T) {
 	}
 
 	jsonData2, err := json.Marshal(u2)
-	if err != nil {
-		t.Fatalf("Failed to marshal user to JSON: %v", err)
-	}
+	assert.NoError(t, err, "Should marshal user 2 to JSON without error")
 
 	resp2, err := http.Post(addURL, "application/json", bytes.NewBuffer(jsonData2))
-	if err != nil {
-		t.Fatalf("Failed to create test user 2: %v", err)
-	}
+	assert.NoError(t, err, "Should create test user 2 without error")
 	resp2.Body.Close()
 
 	// Ahora hacer la petición GET para listar usuarios
 	listURL := apiURL + "/"
 
 	respList, err := http.Get(listURL)
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request to list users: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request to list users without error")
 	defer respList.Body.Close()
 
 	// Verificar el código de estado
-	if respList.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, respList.StatusCode)
-	}
+	assert.Equal(t, http.StatusOK, respList.StatusCode, "Should return 200 OK for list users")
 
 	// Verificar la respuesta JSON
 	var response Response
 	err = json.NewDecoder(respList.Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("Failed to decode list response: %v", err)
-	}
-
-	if response.Status != "success" {
-		t.Errorf("Expected status 'success', got '%s'", response.Status)
-	}
-
-	// Verificar que la respuesta contiene datos
-	if response.Data == nil {
-		t.Error("Expected data in response, got nil")
-	}
+	assert.NoError(t, err, "Should decode list response without error")
+	assert.Equal(t, "success", response.Status, "List response status should be success")
+	assert.NotNil(t, response.Data, "Should have data in response")
 
 	t.Logf("List users test completed successfully: %s", response.Message)
 }
@@ -315,22 +249,16 @@ func TestUpdateUserOk(t *testing.T) {
 
 	// Crear el usuario
 	jsonData, err := json.Marshal(originalUser)
-	if err != nil {
-		t.Fatalf("Failed to marshal user to JSON: %v", err)
-	}
+	assert.NoError(t, err, "Should marshal user to JSON without error")
 
 	resp, err := http.Post(addURL, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request to add user: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request to add user without error")
 	defer resp.Body.Close()
 
 	// Decodificar la respuesta para obtener el id
 	var addResp Response
 	err = json.NewDecoder(resp.Body).Decode(&addResp)
-	if err != nil {
-		t.Fatalf("Failed to decode add user response: %v", err)
-	}
+	assert.NoError(t, err, "Should decode add user response without error")
 
 	// Extraer el id del usuario creado
 	type userID struct {
@@ -339,9 +267,7 @@ func TestUpdateUserOk(t *testing.T) {
 	var uid userID
 	b, _ := json.Marshal(addResp.Data)
 	json.Unmarshal(b, &uid)
-	if uid.ID == 0 {
-		t.Fatalf("No se pudo obtener el id del usuario creado")
-	}
+	assert.NotZero(t, uid.ID, "Should get valid user ID from creation response")
 
 	// Ahora actualizar el usuario
 	updateURL := apiURL + "/update"
@@ -355,32 +281,21 @@ func TestUpdateUserOk(t *testing.T) {
 
 	// Convertir a JSON
 	updateJsonData, err := json.Marshal(updatedUser)
-	if err != nil {
-		t.Fatalf("Failed to marshal updated user to JSON: %v", err)
-	}
+	assert.NoError(t, err, "Should marshal updated user to JSON without error")
 
 	// Hacer la petición HTTP POST al endpoint de update
 	updateResp, err := http.Post(updateURL+fmt.Sprintf("?id=%d", uid.ID), "application/json", bytes.NewBuffer(updateJsonData))
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request to update: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request to update without error")
 	defer updateResp.Body.Close()
 
 	// Verificar el código de estado
-	if updateResp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, updateResp.StatusCode)
-	}
+	assert.Equal(t, http.StatusOK, updateResp.StatusCode, "Should return 200 OK for valid update")
 
 	// Verificar la respuesta JSON
 	var updateResponse Response
 	err = json.NewDecoder(updateResp.Body).Decode(&updateResponse)
-	if err != nil {
-		t.Fatalf("Failed to decode update response: %v", err)
-	}
-
-	if updateResponse.Status != "success" {
-		t.Errorf("Expected status 'success', got '%s'", updateResponse.Status)
-	}
+	assert.NoError(t, err, "Should decode update response without error")
+	assert.Equal(t, "success", updateResponse.Status, "Update response status should be success")
 
 	t.Logf("Update user test completed successfully: %s", updateResponse.Message)
 }
@@ -399,32 +314,21 @@ func TestUpdateUserBad(t *testing.T) {
 
 	// Convertir a JSON
 	jsonData, err := json.Marshal(updateUser)
-	if err != nil {
-		t.Fatalf("Failed to marshal user to JSON: %v", err)
-	}
+	assert.NoError(t, err, "Should marshal user to JSON without error")
 
 	// Hacer la petición HTTP POST con un ID inválido
 	updateResp, err := http.Post(updateURL+"?id=-1", "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request to update: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request to update without error")
 	defer updateResp.Body.Close()
 
 	// Verificar el código de estado
-	if updateResp.StatusCode != http.StatusNotFound {
-		t.Errorf("Expected status code %d, got %d", http.StatusNotFound, updateResp.StatusCode)
-	}
+	assert.Equal(t, http.StatusNotFound, updateResp.StatusCode, "Should return 404 Not Found for invalid ID")
 
 	// Verificar la respuesta JSON
 	var response Response
 	err = json.NewDecoder(updateResp.Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("Failed to decode update response: %v", err)
-	}
-
-	if response.Status != "error" {
-		t.Errorf("Expected status 'error', got '%s'", response.Status)
-	}
+	assert.NoError(t, err, "Should decode update response without error")
+	assert.Equal(t, "error", response.Status, "Response status should be error for invalid ID")
 
 	t.Logf("Update user bad test completed successfully: %s", response.Message)
 }
@@ -443,32 +347,21 @@ func TestUpdateUserBadMissingID(t *testing.T) {
 
 	// Convertir a JSON
 	jsonData, err := json.Marshal(updateUser)
-	if err != nil {
-		t.Fatalf("Failed to marshal user to JSON: %v", err)
-	}
+	assert.NoError(t, err, "Should marshal user to JSON without error")
 
 	// Hacer la petición HTTP POST sin ID
 	updateResp, err := http.Post(updateURL, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		t.Fatalf("Failed to make HTTP request to update: %v", err)
-	}
+	assert.NoError(t, err, "Should make HTTP request to update without error")
 	defer updateResp.Body.Close()
 
 	// Verificar el código de estado
-	if updateResp.StatusCode != http.StatusBadRequest {
-		t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, updateResp.StatusCode)
-	}
+	assert.Equal(t, http.StatusBadRequest, updateResp.StatusCode, "Should return 400 Bad Request for missing ID")
 
 	// Verificar la respuesta JSON
 	var response Response
 	err = json.NewDecoder(updateResp.Body).Decode(&response)
-	if err != nil {
-		t.Fatalf("Failed to decode update response: %v", err)
-	}
-
-	if response.Status != "error" {
-		t.Errorf("Expected status 'error', got '%s'", response.Status)
-	}
+	assert.NoError(t, err, "Should decode update response without error")
+	assert.Equal(t, "error", response.Status, "Response status should be error for missing ID")
 
 	t.Logf("Update user missing ID test completed successfully: %s", response.Message)
 }

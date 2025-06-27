@@ -64,7 +64,7 @@ func AddTopicSubscriber(topic string) {
 
 	go func(topic string) {
 		if topic == "" {
-			log.Fatal().Msg("El topic no puede estar vacío")
+			log.Error().Msg("El topic no puede estar vacío")
 		}
 		// Configurar logger
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -77,7 +77,7 @@ func AddTopicSubscriber(topic string) {
 		client := mqtt.NewClient(opts)
 
 		if token := client.Connect(); token.Wait() && token.Error() != nil {
-			log.Fatal().Err(token.Error()).Msg("Error conectando al broker MQTT")
+			log.Error().Err(token.Error()).Msg("Error conectando al broker MQTT")
 		}
 		log.Info().Msg("🟢 Conectado al broker MQTT como suscriptor")
 
@@ -120,7 +120,7 @@ func AddTopicSubscriber(topic string) {
 		})
 
 		if token.Wait() && token.Error() != nil {
-			log.Fatal().Err(token.Error()).Msg("Error suscribiéndose al topic")
+			log.Error().Err(token.Error()).Msg("Error suscribiéndose al topic")
 		}
 
 		log.Info().Str("topic", topic).Msg("✅ Suscrito al topic")

@@ -22,7 +22,7 @@ func main() {
 	client := mqtt.NewClient(opts)
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatal().Err(token.Error()).Msg("Error conectando al broker MQTT")
+		log.Error().Err(token.Error()).Msg("Error conectando al broker MQTT")
 	}
 	log.Info().Msg("🔵 Conectado al broker MQTT como publicador")
 
@@ -42,7 +42,6 @@ func main() {
 		Source    string    `json:"source"`
 	}
 
-	// Publicar mensajes cada 2 segundos
 	for i := 1; ; i++ {
 		// Rotar entre los topics disponibles
 		currentTopic := topics[(i-1)%len(topics)]
@@ -64,7 +63,7 @@ func main() {
 		}
 
 		// Publicar mensaje
-		token := client.Publish(currentTopic, 0, false, string(jsonMsg))
+		token := client.Publish(currentTopic, 1, false, string(jsonMsg))
 		token.Wait()
 
 		log.Info().
