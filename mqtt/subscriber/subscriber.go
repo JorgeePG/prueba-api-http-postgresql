@@ -177,6 +177,12 @@ func DisconnectAllSubscribers() {
 	manager.DisconnectAll()
 }
 
+// ListMqttMessages obtiene los mensajes MQTT guardados en la base de datos (función de conveniencia)
+func ListMqttMessages(limit int) ([]models.MqttMessage, error) {
+	manager := GetSubscriberManager()
+	return manager.ListMqttMessages(limit)
+}
+
 // GetActiveSubscribers devuelve una lista de topics activos
 func (sm *SubscriberManager) GetActiveSubscribers() []string {
 	sm.mu.RLock()
@@ -243,4 +249,28 @@ func (sm *SubscriberManager) DisconnectAll() {
 	// Limpiar el mapa
 	sm.subscribers = make(map[string]*SubscriberInfo)
 	log.Info().Msg("👋 Todos los suscriptores desconectados")
+}
+
+// ListMqttMessages obtiene todos los mensajes MQTT guardados en la base de datos
+func (sm *SubscriberManager) ListMqttMessages(limit int) ([]models.MqttMessage, error) {
+	if sm.mqttRepo == nil {
+		return nil, fmt.Errorf("base de datos no configurada")
+	}
+
+	if limit <= 0 {
+		limit = 100 // Límite por defecto
+	}
+
+	messages, err := sm.mqttRepo.GetAll(limit)
+	if err != nil {
+		log.Error().Err(err).Msg("❌ Error obteniendo mensajes MQTT de la base de datos")
+		return nil, err
+	}
+
+	log.Info().
+		Int("count", len(messages)).
+		Int("limit", limit).
+		Msg("📋 Mensajes MQTT obtenidos de la base de datos")
+
+	return messages, nil
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/JorgeePG/prueba-api-http-postgresql-/cmd/config"
 	"github.com/JorgeePG/prueba-api-http-postgresql-/cmd/server"
 	"github.com/JorgeePG/prueba-api-http-postgresql-/infraestructure/db"
+	"github.com/JorgeePG/prueba-api-http-postgresql-/mqtt/subscriber"
 	"github.com/rs/zerolog/log"
 )
 
@@ -34,6 +35,12 @@ func (a *App) Initialize() error {
 	}
 
 	log.Info().Msg("Database initialized and migrations applied successfully")
+
+	// Configurar la base de datos en el SubscriberManager
+	subscriberManager := subscriber.GetSubscriberManager()
+	subscriberManager.SetDatabase(db.DB)
+	log.Info().Msg("MQTT SubscriberManager database configured successfully")
+
 	// Configurar servidor
 	a.server = server.New(a.config.Server.Port)
 	a.server.SetupRoutes()

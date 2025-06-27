@@ -233,3 +233,55 @@ func DeleteTopicSubscriber(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(response)
 }
+
+func ListMqttMessages(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Obtener el parámetro num_mensajes de la URL
+	numMensajesStr := r.URL.Query().Get("num_mensajes")
+	limit := 100 // Valor por defecto
+
+	// Si se proporciona el parámetro, convertirlo a int
+	if numMensajesStr != "" {
+		var err error
+		limit, err = strconv.Atoi(numMensajesStr)
+		if err != nil {
+			response := models.Response{
+				Status:  "error",
+				Message: "Invalid num_mensajes parameter: " + err.Error(),
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		// Validar que el límite sea positivo
+		if limit <= 0 {
+			response := models.Response{
+				Status:  "error",
+				Message: "num_mensajes must be a positive number",
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+	}
+
+	messages, err := subscriber.ListMqttMessages(limit)
+	if err != nil {
+		response := models.Response{
+			Status:  "error",
+			Message: "Error retrieving MQTT messages: " + err.Error(),
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	response := models.Response{
+		Status:  "success",
+		Message: "MQTT messages retrieved successfully",
+		Data:    messages,
+	}
+	json.NewEncoder(w).Encode(response)
+}
