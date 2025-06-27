@@ -41,8 +41,13 @@ func (a *App) Initialize() error {
 	subscriberManager.SetDatabase(db.DB)
 	log.Info().Msg("MQTT SubscriberManager database configured successfully")
 
-	// Configurar servidor
-	a.server = server.New(a.config.Server.Port)
+	// Configurar servidor con SSL
+	a.server = server.New(
+		a.config.Server.Port,
+		a.config.Server.UseSSL,
+		a.config.Server.SSLCert,
+		a.config.Server.SSLKey,
+	)
 	a.server.SetupRoutes()
 
 	log.Info().Msg("Server routes set up successfully")

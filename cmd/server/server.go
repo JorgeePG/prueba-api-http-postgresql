@@ -10,18 +10,29 @@ import (
 )
 
 type Server struct {
-	router *mux.Router
-	port   string
+	router  *mux.Router
+	port    string
+	useSSL  bool
+	sslCert string
+	sslKey  string
 }
 
-func New(port string) *Server {
+func New(port string, useSSL bool, sslCert, sslKey string) *Server {
 	return &Server{
-		router: mux.NewRouter(),
-		port:   port,
+		router:  mux.NewRouter(),
+		port:    port,
+		useSSL:  useSSL,
+		sslCert: sslCert,
+		sslKey:  sslKey,
 	}
 }
 
 func (s *Server) SetupRoutes() {
+	// Middlewares de seguridad
+	s.router.Use(middleware.SecurityHeaders)
+	if s.useSSL {
+		s.router.Use(middleware.HTTPSRedirect)
+	}
 	s.router.Use(middleware.CspControl)
 
 	s.router.HandleFunc("/", handler.ListV2).Methods("GET")
@@ -35,6 +46,15 @@ func (s *Server) SetupRoutes() {
 }
 
 func (s *Server) Start() error {
-	log.Info().Msgf("Iniciando servidor en el puerto %s", s.port)
-	return http.ListenAndServe(":"+s.port, s.router)
+	address := ":" + s.port
+
+	if s.useSSL {
+		log.Info().Msgf("🔒 Iniciando servidor HTTPS en el puerto %s", s.port)
+		log.Info().Msgf("📜 Usando certificado: %s", s.sslCert)
+		log.Info().Msgf("🔑 Usando clave privada: %s", s.sslKey)
+		return http.ListenAndServeTLS(address, s.sslCert, s.sslKey, s.router)
+	} else {
+		log.Info().Msgf("⚠️  Iniciando servidor HTTP (no seguro) en el puerto %s", s.port)
+		return http.ListenAndServe(address, s.router)
+	}
 }
