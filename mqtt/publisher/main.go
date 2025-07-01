@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -18,11 +21,46 @@ func main() {
 
 	log.Info().Msg("🚀 Iniciando MQTT Publisher")
 
-	opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883").SetClientID("go-publisher")
+	// Cargar el certificado CA del broker
+	caCert, err := ioutil.ReadFile("./cert/ca.crt")
+	if err != nil {
+		log.Fatal().Err(err).Msg("No se pudo leer el certificado CA")
+	}
+
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM(caCert) {
+		log.Fatal().Msg("No se pudo agregar el certificado CA al pool")
+	}
+
+	// Intentar cargar certificado de cliente (opcional)
+	var tlsConfig *tls.Config
+	clientCert, err := tls.LoadX509KeyPair("./cert/client.crt", "./cert/client.key")
+	if err != nil {
+		log.Warn().Err(err).Msg("No se encontraron certificados de cliente, usando solo CA")
+		tlsConfig = &tls.Config{
+			RootCAs:            caCertPool,
+			InsecureSkipVerify: true, // Solo para pruebas, ponlo en false en producción
+			ServerName:         "localhost",
+		}
+	} else {
+		tlsConfig = &tls.Config{
+			RootCAs:            caCertPool,
+			Certificates:       []tls.Certificate{clientCert},
+			InsecureSkipVerify: true, // Solo para pruebas, ponlo en false en producción
+			ServerName:         "localhost",
+		}
+	}
+
+	opts := mqtt.NewClientOptions().
+		AddBroker("ssl://localhost:8883").
+		SetClientID("go-publisher").
+		SetTLSConfig(tlsConfig).
+		SetUsername("publisher").
+		SetPassword("publisher")
 	client := mqtt.NewClient(opts)
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		log.Error().Err(token.Error()).Msg("Error conectando al broker MQTT")
+		log.Fatal().Err(token.Error()).Msg("Error conectando al broker MQTT")
 	}
 	log.Info().Msg("🔵 Conectado al broker MQTT como publicador")
 

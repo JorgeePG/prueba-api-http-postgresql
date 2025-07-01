@@ -22,7 +22,7 @@ Todo lo que hay que hacer para añadir seguridad a MQTT
     keyfile /etc/mosquitto/certs/broker.key
 
     ## TLS obligatorio
-    require_certificate false
+    require_certificate true
 
     ## Seguridad
     allow_anonymous false
