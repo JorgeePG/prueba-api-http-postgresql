@@ -1,0 +1,70 @@
+Todo lo que hay que hacer para añadir seguridad a MQTT
+
+# Se tiene que crear una carpeta para los certificados:
+    sudo mkdir -p /etc/mosquitto/certs
+
+# Se crean y firman:
+    sudo openssl genrsa -out ca.key 2048
+    sudo openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 -out ca.crt -subj "/CN=MQTT CA"
+
+    ## Broker key y CSR
+    sudo openssl genrsa -out broker.key 2048
+    sudo openssl req -new -key broker.key -out broker.csr -subj "/CN=localhost"
+
+    ## Firmar certificado del broker
+    sudo openssl x509 -req -in broker.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out broker.crt -days 3650 -sha256
+
+# Se le tiene que poner esta configuración en el .conf:
+    ## Listener TLS
+    listener 8883
+    cafile /etc/mosquitto/certs/ca.crt
+    certfile /etc/mosquitto/certs/broker.crt
+    keyfile /etc/mosquitto/certs/broker.key
+
+    ## TLS obligatorio
+    require_certificate false
+
+    ## Seguridad
+    allow_anonymous false
+    password_file /etc/mosquitto/passwd
+    acl_file /etc/mosquitto/acl
+
+    ## Logging
+    log_dest file /var/log/mosquitto/mosquitto.log
+
+# Se crean usuarios:
+    sudo mosquitto_passwd -c /etc/mosquitto/passwd sensor1
+
+# Se accede al ACL y se definen permisos:
+    sudo nano /etc/mosquitto/acl
+
+    ##permisos a escribir por ejemplo
+    user sensor1
+    topic write sensores/sala1/temperatura
+
+    user admin
+    topic read #
+
+# Se reinicia el servicio:
+    sudo systemctl restart mosquitto
+
+#En caso de fallos revisar:
+    1. Permisos incorrectos en certificados
+    Los archivos .key y .crt estaban con propietario root y Mosquitto no podía accederlos.
+
+    Solución: Cambiar propietario a mosquitto y ajustar permisos (600 para claves privadas, 644 para certificados públicos).
+
+    2. Conflictos en configuración por archivos en /etc/mosquitto/conf.d
+    La inclusión de archivos adicionales en conf.d podía crear conflictos de listeners o configuraciones redundantes.
+
+    Solución: Desactivar temporalmente o revisar esos archivos para evitar listeners duplicados.
+
+    3. Falta del archivo de contraseñas (passwd)
+    Mosquitto no arrancaba porque la configuración apuntaba a un archivo de usuarios/passwords que no existía.
+
+    Solución: Crear el archivo con mosquitto_passwd, agregar usuarios y asegurarse de que Mosquitto tenga acceso.
+
+    4. Falta del archivo ACL
+    Aunque no causó error crítico, es recomendable tener un archivo ACL para controlar qué usuarios pueden acceder a qué tópicos.
+
+    Solución: Crear un archivo básico para dar permisos mínimos.
