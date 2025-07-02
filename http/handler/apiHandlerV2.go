@@ -226,18 +226,16 @@ func AddTopicSubscriber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validar que el topic MQTT sea válido
-	if !isValidMQTTTopic(topic) {
+	// Intentar agregar el suscriptor
+	if err := subscriber.AddTopicSubscriber(topic); err != nil {
 		response := models.Response{
 			Status:  "error",
-			Message: "Invalid MQTT topic",
+			Message: err.Error(),
 		}
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(response)
 		return
 	}
-
-	go subscriber.AddTopicSubscriber(topic)
 
 	response := models.Response{
 		Status:  "success",
@@ -260,7 +258,16 @@ func DeleteTopicSubscriber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go subscriber.DeleteTopicSubscriber(topic)
+	// Intentar eliminar el suscriptor
+	if err := subscriber.DeleteTopicSubscriber(topic); err != nil {
+		response := models.Response{
+			Status:  "error",
+			Message: err.Error(),
+		}
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
 	response := models.Response{
 		Status:  "success",

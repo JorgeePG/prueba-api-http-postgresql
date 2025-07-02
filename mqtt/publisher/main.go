@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -22,7 +21,7 @@ func main() {
 	log.Info().Msg("🚀 Iniciando MQTT Publisher")
 
 	// Cargar el certificado CA del broker
-	caCert, err := ioutil.ReadFile("./cert/ca.crt")
+	caCert, err := os.ReadFile("./cert/ca.crt")
 	if err != nil {
 		log.Fatal().Err(err).Msg("No se pudo leer el certificado CA")
 	}
