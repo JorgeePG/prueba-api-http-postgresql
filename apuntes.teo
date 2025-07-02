@@ -43,7 +43,7 @@ Todo lo que hay que hacer para añadir seguridad a MQTT
     topic write sensores/sala1/temperatura
 
     user admin
-    topic read #
+    topic read #       !!!!MUCHO CUIDADO PORQUE NO VA SI NO PONES EL USUARIO BIEN¡¡¡
 
 # Se reinicia el servicio:
     sudo systemctl restart mosquitto
